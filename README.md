@@ -5,6 +5,10 @@ A powerful, intelligent translation tool for iOS/macOS localization strings with
 [中文版本](#中文版本) | [English Version](#english-version)
 
 ---
+<img width="1922" height="1546" alt="1" src="https://github.com/user-attachments/assets/524f50f7-aa20-42ca-b3d3-d6ce638acbac" />
+<img width="1922" height="1546" alt="2" src="https://github.com/user-attachments/assets/b883732b-795a-4c24-b74a-767dc2626754" />
+<img width="1922" height="1546" alt="8" src="https://github.com/user-attachments/assets/ae20d771-5e3c-4d21-92e7-42b82ba50597" />
+---
 
 ## English Version
 
