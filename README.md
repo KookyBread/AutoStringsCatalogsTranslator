@@ -310,13 +310,13 @@ Swimming,游泳,游泳,スイミング,Nuoto
 #### 示例1: 使用词典的基本翻译
 
 ```bash
-python3 localization_translator.py Localizable.xcstrings Localizable_translated.xcstrings dictionaries/AppleWatchWorkoutTypes.csv
+python3 auto_strings_catalogs_translator.py Localizable.xcstrings Localizable_translated.xcstrings dictionaries/AppleWatchWorkoutTypes.csv
 ```
 
 #### 示例2: 交互式模式自定义设置
 
 ```bash
-python3 localization_translator.py
+python3 auto_strings_catalogs_translator.py
 # 按照交互式提示进行：
 # 1. 选择界面语言
 # 2. 选择输入文件
@@ -329,14 +329,14 @@ python3 localization_translator.py
 #### 示例3: 多个词典
 
 ```bash
-python3 localization_translator.py input.json output.xcstrings dict1.csv dict2.csv dict3.csv
+python3 auto_strings_catalogs_translator.py input.json output.xcstrings dict1.csv dict2.csv dict3.csv
 ```
 
 ### 🏗️ 项目结构
 
 ```
-LocalizationTranslator/
-├── localization_translator.py    # 主脚本
+AutoStringsCatalogsTranslator/
+├── auto_strings_catalogs_translator.py    # 主脚本
 ├── README.md                     # 说明文档
 ├── requirements.txt              # Python依赖
 ├── LICENSE                       # MIT许可证
