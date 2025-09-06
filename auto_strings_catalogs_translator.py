@@ -1069,54 +1069,68 @@ def translate_xcstrings_file(input_file: str, output_file: str, target_languages
         translated_count = 0
         skipped_count = 0
         
-        # Count entries that need translation
+        # Count entries that need translation - First pass: create missing localizations
         for key, value in strings_data.items():
-            if not key or 'localizations' not in value:
+            if not key:
                 continue
+            
+            # 为没有localizations字段的条目创建结构
+            if 'localizations' not in value:
+                value['localizations'] = {}
+            
+            localizations = value['localizations']
+            
+            # 为每个目标语言创建结构（如果不存在）
+            for lang_code in target_languages:
+                if lang_code not in localizations:
+                    localizations[lang_code] = {
+                        'stringUnit': {
+                            'state': 'new',
+                            'value': ''
+                        }
+                    }
             
             if value.get('shouldTranslate') == False:
                 continue
-                
-            localizations = value['localizations']
+            
             for lang_code in target_languages:
-                if lang_code in localizations:
-                    lang_unit = localizations[lang_code]['stringUnit']
-                    en_value = localizations.get('en', {}).get('stringUnit', {}).get('value', key)
-                    
-                    # Get current translation value
-                    current_value = lang_unit.get('value', '')
-                    
-                    # Check if translation is needed
-                    if skip_translated:
-                        # Skip mode: translate 'new', empty, or same-as-english meaningful text
-                        should_translate = (
-                            lang_unit.get('state') == 'new' or 
-                            lang_unit.get('value') == '' or
-                            (current_value == en_value and 
-                             len(en_value) > 2 and
-                             not en_value.startswith('%') and
-                             not en_value.startswith('/') and
-                             not en_value.isdigit() and
-                             not all(c in '-: /' for c in en_value) and  # 跳过纯符号
-                             any(c.isalpha() for c in en_value))  # 必须包含字母
-                        )
-                    else:
-                        # Full mode: translate all qualifying entries
-                        should_translate = (
-                            lang_unit.get('state') == 'new' or 
-                            lang_unit.get('value') == '' or
-                            lang_unit.get('state') == 'needs_review' or
-                            (current_value == en_value and 
-                             len(en_value) > 2 and
-                             not en_value.startswith('%') and
-                             not en_value.startswith('/') and
-                             not en_value.isdigit() and
-                             not all(c in '-: /' for c in en_value) and  # 跳过纯符号
-                             any(c.isalpha() for c in en_value))  # 必须包含字母
-                        )
-                    
-                    if should_translate:
-                        total_count += 1
+                lang_unit = localizations[lang_code]['stringUnit']
+                en_value = localizations.get('en', {}).get('stringUnit', {}).get('value', key)
+                
+                # Get current translation value
+                current_value = lang_unit.get('value', '')
+                
+                # Check if translation is needed
+                if skip_translated:
+                    # Skip mode: translate 'new', empty, or same-as-english meaningful text
+                    should_translate = (
+                        lang_unit.get('state') == 'new' or 
+                        lang_unit.get('value') == '' or
+                        (current_value == en_value and 
+                         len(en_value) > 2 and
+                         not en_value.startswith('%') and
+                         not en_value.startswith('/') and
+                         not en_value.isdigit() and
+                         not all(c in '-: /' for c in en_value) and  # 跳过纯符号
+                         any(c.isalpha() for c in en_value))  # 必须包含字母
+                    )
+                else:
+                    # Full mode: translate all qualifying entries
+                    should_translate = (
+                        lang_unit.get('state') == 'new' or 
+                        lang_unit.get('value') == '' or
+                        lang_unit.get('state') == 'needs_review' or
+                        (current_value == en_value and 
+                         len(en_value) > 2 and
+                         not en_value.startswith('%') and
+                         not en_value.startswith('/') and
+                         not en_value.isdigit() and
+                         not all(c in '-: /' for c in en_value) and  # 跳过纯符号
+                         any(c.isalpha() for c in en_value))  # 必须包含字母
+                    )
+                
+                if should_translate:
+                    total_count += 1
         
         start_text = TerminalColors.themed_text(f"\n🚀 {get_text('start_translation', lang)}", AppState.get_theme(), 1.0)
         print(start_text)
@@ -1133,24 +1147,36 @@ def translate_xcstrings_file(input_file: str, output_file: str, target_languages
         current_count = 0
         
         for key, value in strings_data.items():
-            if not key or 'localizations' not in value:
+            if not key:
                 continue
+            
+            # 为没有localizations字段的条目创建结构
+            if 'localizations' not in value:
+                value['localizations'] = {}
+            
+            localizations = value['localizations']
+            
+            # 为每个目标语言创建结构（如果不存在）
+            for lang_code in target_languages:
+                if lang_code not in localizations:
+                    localizations[lang_code] = {
+                        'stringUnit': {
+                            'state': 'new',
+                            'value': ''
+                        }
+                    }
             
             if value.get('shouldTranslate') == False:
                 # Don't translate entries, just copy English value
                 for lang_code in target_languages:
-                    if lang_code in value['localizations']:
-                        lang_unit = value['localizations'][lang_code]['stringUnit']
+                    if lang_code in localizations:
+                        lang_unit = localizations[lang_code]['stringUnit']
                         if lang_unit.get('state') == 'new' or lang_unit.get('value') == '':
                             lang_unit['value'] = key
                             lang_unit['state'] = 'translated'
                 continue
             
-            localizations = value['localizations']
-            
             for lang_code in target_languages:
-                if lang_code not in localizations:
-                    continue
                 
                 lang_unit = localizations[lang_code]['stringUnit']
                 en_value = localizations.get('en', {}).get('stringUnit', {}).get('value', key)
@@ -1319,6 +1345,34 @@ def get_text(key: str, lang: str = "zh") -> str:
         "detected_languages": {
             "zh": "检测到目标语言",
             "en": "Detected target languages"
+        },
+        "select_target_languages": {
+            "zh": "🌍 选择目标翻译语言",
+            "en": "🌍 Select Target Translation Languages"
+        },
+        "use_detected_languages": {
+            "zh": "使用检测到的语言?",
+            "en": "Use detected languages?"
+        },
+        "select_custom_languages": {
+            "zh": "从常用语言中选择:",
+            "en": "Select from common languages:"
+        },
+        "multi_select_instruction": {
+            "zh": "输入数字选择语言 (多个用逗号分隔，如: 1,3,5):",
+            "en": "Enter numbers to select languages (comma-separated, e.g.: 1,3,5):"
+        },
+        "enter_choices": {
+            "zh": "请输入选择: ",
+            "en": "Enter your choices: "
+        },
+        "selected_languages": {
+            "zh": "已选择的语言",
+            "en": "Selected languages"
+        },
+        "no_target_languages": {
+            "zh": "未选择目标语言",
+            "en": "No target languages selected"
         },
         "select_mode": {
             "zh": "📋 选择翻译模式:",
@@ -1733,6 +1787,118 @@ def interactive_select_mode(lang: str = "zh"):
             return None
 
 
+def interactive_select_target_languages(detected_languages: Set[str], lang: str = "zh") -> Set[str]:
+    """
+    交互式选择目标语言
+    
+    Args:
+        detected_languages: 已检测到的语言集合
+        lang: 界面语言
+    
+    Returns:
+        用户选择的目标语言集合
+    """
+    # 常用语言列表
+    common_languages = {
+        'zh-Hans': '简体中文',
+        'zh-Hant': '繁体中文',
+        'ja': '日语',
+        'ko': '韩语',
+        'it': '意大利语',
+        'fr': '法语',
+        'de': '德语',
+        'es': '西班牙语',
+        'pt': '葡萄牙语',
+        'ru': '俄语',
+        'ar': '阿拉伯语',
+        'hi': '印地语',
+        'th': '泰语',
+        'vi': '越南语'
+    }
+    
+    print()
+    title_text = TerminalColors.themed_text(get_text('select_target_languages', lang), AppState.get_theme(), 1.0)
+    print(f"{title_text}")
+    print()
+    
+    if detected_languages:
+        detected_text = TerminalColors.themed_text(f"🎯 {get_text('detected_languages', lang)}:", AppState.get_theme(), 0.9)
+        print(f"{detected_text}")
+        for lang_code in sorted(detected_languages):
+            lang_name = LanguageDetector.get_language_name(lang_code, lang)
+            lang_text = TerminalColors.themed_text(f"  • {lang_name} ({lang_code})", AppState.get_theme(), 0.5)
+            print(f"{lang_text}")
+        
+        print()
+        use_detected_text = TerminalColors.themed_text(get_text('use_detected_languages', lang), AppState.get_theme(), 0.8)
+        choice_text = TerminalColors.themed_text("(Y/n): ", AppState.get_theme(), 1.0)
+        use_detected = input(f"{use_detected_text} {choice_text}").strip().lower()
+        
+        if use_detected in ['', 'y', 'yes']:
+            return detected_languages
+    
+    # 显示常用语言选项
+    print()
+    select_custom_text = TerminalColors.themed_text(get_text('select_custom_languages', lang), AppState.get_theme(), 0.9)
+    print(f"{select_custom_text}")
+    print()
+    
+    lang_list = list(common_languages.keys())
+    for i, lang_code in enumerate(lang_list, 1):
+        lang_name = common_languages[lang_code]
+        option_text = TerminalColors.themed_text(f"  {i}. {lang_name} ({lang_code})", AppState.get_theme(), 0.7)
+        print(f"{option_text}")
+    
+    print()
+    instruction_text = TerminalColors.themed_text(get_text('multi_select_instruction', lang), AppState.get_theme(), 0.6)
+    print(f"{instruction_text}")
+    
+    while True:
+        choice_text = TerminalColors.themed_text(get_text('enter_choices', lang), AppState.get_theme(), 1.0)
+        choices = input(f"\n{choice_text}").strip()
+        
+        if not choices:
+            continue
+        
+        try:
+            selected_languages = set()
+            if ',' in choices:
+                choice_list = [c.strip() for c in choices.split(',')]
+            else:
+                choice_list = [choices]
+            
+            for choice in choice_list:
+                if choice.isdigit():
+                    index = int(choice) - 1
+                    if 0 <= index < len(lang_list):
+                        selected_languages.add(lang_list[index])
+                    else:
+                        raise ValueError(f"Invalid choice: {choice}")
+                else:
+                    # 直接输入语言代码
+                    if choice in common_languages:
+                        selected_languages.add(choice)
+                    else:
+                        raise ValueError(f"Unknown language code: {choice}")
+            
+            if selected_languages:
+                # 显示选择结果
+                print()
+                selected_text = TerminalColors.themed_text(f"✅ {get_text('selected_languages', lang)}:", AppState.get_theme(), 0.9)
+                print(f"{selected_text}")
+                for lang_code in sorted(selected_languages):
+                    lang_name = LanguageDetector.get_language_name(lang_code, lang)
+                    lang_text = TerminalColors.themed_text(f"  • {lang_name} ({lang_code})", AppState.get_theme(), 0.5)
+                    print(f"{lang_text}")
+                
+                return selected_languages
+            
+        except ValueError as e:
+            error_text = TerminalColors.themed_text(f"❌ {e}", "red", 0.8)
+            print(f"{error_text}")
+            continue
+
+
 def interactive_select_output_format(input_file: str, lang: str = "zh"):
     """Interactive output format selection"""
     header_text = TerminalColors.themed_text(get_text('output_format_prompt', lang), AppState.get_theme(), 1.0)
@@ -1867,16 +2033,12 @@ def main():
                     sys.exit(1)
         
         # Detect target languages from input file
-        target_languages = LanguageDetector.detect_target_languages(input_file)
-        if target_languages:
-            detected_text = TerminalColors.themed_text(f"🎯 {get_text('detected_languages', interface_lang)}:", AppState.get_theme(), 0.9)
-            print(f"\n{detected_text}")
-            for lang_code in sorted(target_languages):
-                lang_name = LanguageDetector.get_language_name(lang_code, interface_lang)
-                lang_text = TerminalColors.themed_text(f"  • {lang_name} ({lang_code})", AppState.get_theme(), 0.5)
-                print(f"{lang_text}")
-        else:
-            error_text = TerminalColors.themed_text("❌ 未检测到目标语言", "red", 0.8)
+        detected_languages = LanguageDetector.detect_target_languages(input_file)
+        
+        # Let user select target languages (including detected ones or custom selection)
+        target_languages = interactive_select_target_languages(detected_languages, interface_lang)
+        if not target_languages:
+            error_text = TerminalColors.themed_text(f"❌ {get_text('no_target_languages', interface_lang)}", "red", 0.8)
             print(f"{error_text}")
             sys.exit(1)
         
